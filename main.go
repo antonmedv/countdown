@@ -7,9 +7,12 @@ import (
 	"time"
 )
 
-var deadline time.Time
-var startDone = false
-var startX, startY int
+var (
+	duration       time.Duration
+	deadline       time.Time
+	startDone      = false
+	startX, startY int
+)
 
 func draw() {
 	w, h := termbox.Size()
@@ -41,7 +44,7 @@ func format(d time.Duration) string {
 	d -= m * time.Minute
 	s := d / time.Second
 
-	if h == 0 {
+	if duration.Hours() < 1 {
 		return fmt.Sprintf("%02d:%02d", m, s)
 	} else {
 		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
@@ -49,16 +52,19 @@ func format(d time.Duration) string {
 }
 
 func main() {
+	var err error
+	var exitCode = 0
+
 	if len(os.Args) != 2 {
-		stderr(`Usage: 
-  countdown 25sdelta
+		stderr(`usage: 
+  countdown 25s
   countdown 1m50s
   countdown 2h45m50s
 `)
 		os.Exit(2)
 	}
 
-	duration, err := time.ParseDuration(os.Args[1])
+	duration, err = time.ParseDuration(os.Args[1])
 	if err != nil {
 		stderr("error: invalid duration: %v\n", os.Args[1])
 		os.Exit(2)
@@ -67,7 +73,6 @@ func main() {
 	deadline = time.Now().Add(duration)
 	timeout := time.After(duration)
 
-	exitCode := 0
 	err = termbox.Init()
 	if err != nil {
 		panic(err)
