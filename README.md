@@ -7,7 +7,7 @@
 Specify duration in go format `1h2m3s`.
 
 ```bash
-countdown 5s
+countdown 25s
 ```
 
 Add command with `&&` to run after countdown.
