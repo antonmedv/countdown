@@ -91,7 +91,6 @@ loop:
 		case <-ticker.C:
 			left -= time.Duration(tick)
 			draw(left)
-			time.Sleep(10 * time.Millisecond)
 		case <-timer.C:
 			break loop
 		}
