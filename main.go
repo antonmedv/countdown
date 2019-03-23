@@ -20,7 +20,7 @@ var (
 	timer          *time.Timer
 	ticker         *time.Ticker
 	queues         chan termbox.Event
-	startDone      = false
+	startDone      bool
 	startX, startY int
 )
 
