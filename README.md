@@ -16,13 +16,17 @@ Add command with `&&` to run after countdown.
 countdown 1m30s && say "Hello, world"
 ```
 
-Press `Esc` or `Ctrl+C` to stop countdown without running next command.
+## Key binding
+
+- `p` or `P`: To pause the countdown.
+- `c` or  `C`: To resume the countdown.
+- `Esc` or `Ctrl+C`: To stop the countdown without running next command.
 
 ## Install
 
 ```bash
 go get github.com/antonmedv/countdown
-``` 
+```
 
 ## License
 
