@@ -2,24 +2,33 @@ package main
 
 import (
 	"fmt"
-	"github.com/nsf/termbox-go"
 	"os"
 	"time"
+
+	"github.com/nsf/termbox-go"
+)
+
+const (
+	usage = `usage:
+countdown 25s
+countdown 1m50s
+countdown 2h45m50s`
+	tick = time.Second
 )
 
 var (
-	duration       time.Duration
-	deadline       time.Time
-	startDone      = false
+	timer          *time.Timer
+	ticker         *time.Ticker
+	queues         chan termbox.Event
+	startDone      bool
 	startX, startY int
 )
 
-func draw() {
+func draw(d time.Duration) {
 	w, h := termbox.Size()
 	clear()
 
-	left := time.Until(deadline)
-	str := format(left)
+	str := format(d)
 	text := toText(str)
 
 	if !startDone {
@@ -44,48 +53,26 @@ func format(d time.Duration) string {
 	d -= m * time.Minute
 	s := d / time.Second
 
-	if duration.Hours() < 1 {
+	if d.Hours() < 1 {
 		return fmt.Sprintf("%02d:%02d", m, s)
-	} else {
-		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
 	}
+	return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
 }
 
-func main() {
-	var err error
-	var exitCode = 0
+func start(d time.Duration) {
+	timer = time.NewTimer(d)
+	ticker = time.NewTicker(tick)
+}
 
-	if len(os.Args) != 2 {
-		stderr(`usage: 
-  countdown 25s
-  countdown 1m50s
-  countdown 2h45m50s
-`)
-		os.Exit(2)
-	}
+func stop() {
+	timer.Stop()
+	ticker.Stop()
+}
 
-	duration, err = time.ParseDuration(os.Args[1])
-	if err != nil {
-		stderr("error: invalid duration: %v\n", os.Args[1])
-		os.Exit(2)
-	}
+func countdown(left time.Duration) {
+	var exitCode int
 
-	deadline = time.Now().Add(duration)
-	timeout := time.After(duration)
-
-	err = termbox.Init()
-	if err != nil {
-		panic(err)
-	}
-
-	queues := make(chan termbox.Event)
-	go func() {
-		for {
-			queues <- termbox.PollEvent()
-		}
-	}()
-
-	draw()
+	start(left)
 
 loop:
 	for {
@@ -95,11 +82,17 @@ loop:
 				exitCode = 1
 				break loop
 			}
-		case <-timeout:
+			if ev.Ch == 'p' || ev.Ch == 'P' {
+				stop()
+			}
+			if ev.Ch == 'c' || ev.Ch == 'C' {
+				start(left)
+			}
+		case <-ticker.C:
+			left -= time.Duration(tick)
+			draw(left)
+		case <-timer.C:
 			break loop
-		default:
-			draw()
-			time.Sleep(10 * time.Millisecond)
 		}
 	}
 
@@ -107,4 +100,33 @@ loop:
 	if exitCode != 0 {
 		os.Exit(exitCode)
 	}
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		stderr(usage)
+		os.Exit(2)
+	}
+
+	duration, err := time.ParseDuration(os.Args[1])
+	if err != nil {
+		stderr("error: invalid duration: %v\n", os.Args[1])
+		os.Exit(2)
+	}
+	left := duration
+
+	err = termbox.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	queues = make(chan termbox.Event)
+	go func() {
+		for {
+			queues <- termbox.PollEvent()
+		}
+	}()
+
+	draw(left)
+	countdown(left)
 }
