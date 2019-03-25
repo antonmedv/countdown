@@ -53,7 +53,7 @@ func format(d time.Duration) string {
 	d -= m * time.Minute
 	s := d / time.Second
 
-	if d.Hours() < 1 {
+	if h < 1 {
 		return fmt.Sprintf("%02d:%02d", m, s)
 	}
 	return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
