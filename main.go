@@ -12,7 +12,8 @@ const (
 	usage = `usage:
 countdown 25s
 countdown 1m50s
-countdown 2h45m50s`
+countdown 2h45m50s
+`
 	tick = time.Second
 )
 
