@@ -96,14 +96,14 @@ loop:
 				start(timeLeft)
 			}
 		case <-ticker.C:
-      if countUp {
-			  timeLeft += time.Duration(tick)
-      } else {
-			  timeLeft -= time.Duration(tick)
-      }
+			if countUp {
+				timeLeft += time.Duration(tick)
+		      	} else {
+		      		timeLeft -= time.Duration(tick)
+		      	}
 			draw(timeLeft)
 		case <-timer.C:
-      break loop
+      			break loop
 		}
 	}
 
