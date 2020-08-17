@@ -75,11 +75,11 @@ func countdown(timeLeft time.Duration, countUp bool) {
 
 	start(timeLeft)
 
-  if countUp {
-    timeLeft = 0;
-  }
+  	if countUp {
+    		timeLeft = 0;
+  	}
 
-  draw(timeLeft)
+  	draw(timeLeft)
 
 loop:
 	for {
@@ -137,6 +137,6 @@ func main() {
 			queues <- termbox.PollEvent()
 		}
 	}()
-  countUp := len(os.Args) == 3 && os.Args[2] == "-up"
+  	countUp := len(os.Args) == 3 && os.Args[2] == "-up"
 	countdown(timeLeft, countUp)
 }
