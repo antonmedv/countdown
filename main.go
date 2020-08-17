@@ -79,7 +79,7 @@ func countdown(timeLeft time.Duration, countUp bool) {
     timeLeft = 0;
   }
 
-	draw(timeLeft)
+  draw(timeLeft)
 
 loop:
 	for {
