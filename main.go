@@ -10,9 +10,9 @@ import (
 
 const (
 	usage = `usage:
-countdown 25s
-countdown 1m50s
-countdown 2h45m50s
+countdown 25s [-up]
+countdown 1m50s [-up]
+countdown 2h45m50s [-up]
 `
 	tick = time.Second
 )
@@ -70,10 +70,16 @@ func stop() {
 	ticker.Stop()
 }
 
-func countdown(left time.Duration) {
+func countdown(timeLeft time.Duration, countUp bool) {
 	var exitCode int
 
-	start(left)
+	start(timeLeft)
+
+  	if countUp {
+    		timeLeft = 0;
+  	}
+
+  	draw(timeLeft)
 
 loop:
 	for {
@@ -87,13 +93,17 @@ loop:
 				stop()
 			}
 			if ev.Ch == 'c' || ev.Ch == 'C' {
-				start(left)
+				start(timeLeft)
 			}
 		case <-ticker.C:
-			left -= time.Duration(tick)
-			draw(left)
+			if countUp {
+				timeLeft += time.Duration(tick)
+		      	} else {
+		      		timeLeft -= time.Duration(tick)
+		      	}
+			draw(timeLeft)
 		case <-timer.C:
-			break loop
+      			break loop
 		}
 	}
 
@@ -104,7 +114,7 @@ loop:
 }
 
 func main() {
-	if len(os.Args) != 2 {
+	if len(os.Args) < 2 || len(os.Args) > 3 {
 		stderr(usage)
 		os.Exit(2)
 	}
@@ -114,7 +124,7 @@ func main() {
 		stderr("error: invalid duration: %v\n", os.Args[1])
 		os.Exit(2)
 	}
-	left := duration
+	timeLeft := duration
 
 	err = termbox.Init()
 	if err != nil {
@@ -127,7 +137,6 @@ func main() {
 			queues <- termbox.PollEvent()
 		}
 	}()
-
-	draw(left)
-	countdown(left)
+  	countUp := len(os.Args) == 3 && os.Args[2] == "-up"
+	countdown(timeLeft, countUp)
 }
