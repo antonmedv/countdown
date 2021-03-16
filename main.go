@@ -21,7 +21,6 @@ var (
 	timer          *time.Timer
 	ticker         *time.Ticker
 	queues         chan termbox.Event
-	startDone      bool
 	startX, startY int
 )
 
@@ -32,10 +31,7 @@ func draw(d time.Duration) {
 	str := format(d)
 	text := toText(str)
 
-	if !startDone {
-		startDone = true
-		startX, startY = w/2-text.width()/2, h/2-text.height()/2
-	}
+	startX, startY = w/2-text.width()/2, h/2-text.height()/2
 
 	x, y := startX, startY
 	for _, s := range text {
@@ -75,11 +71,11 @@ func countdown(timeLeft time.Duration, countUp bool) {
 
 	start(timeLeft)
 
-  	if countUp {
-    		timeLeft = 0;
-  	}
+	if countUp {
+		timeLeft = 0
+	}
 
-  	draw(timeLeft)
+	draw(timeLeft)
 
 loop:
 	for {
@@ -98,12 +94,12 @@ loop:
 		case <-ticker.C:
 			if countUp {
 				timeLeft += time.Duration(tick)
-		      	} else {
-		      		timeLeft -= time.Duration(tick)
-		      	}
+			} else {
+				timeLeft -= time.Duration(tick)
+			}
 			draw(timeLeft)
 		case <-timer.C:
-      			break loop
+			break loop
 		}
 	}
 
@@ -137,6 +133,6 @@ func main() {
 			queues <- termbox.PollEvent()
 		}
 	}()
-  	countUp := len(os.Args) == 3 && os.Args[2] == "-up"
+	countUp := len(os.Args) == 3 && os.Args[2] == "-up"
 	countdown(timeLeft, countUp)
 }
