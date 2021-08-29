@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gen2brain/beeep"
 	"github.com/nsf/termbox-go"
 )
 
@@ -75,11 +76,11 @@ func countdown(timeLeft time.Duration, countUp bool) {
 
 	start(timeLeft)
 
-  	if countUp {
-    		timeLeft = 0;
-  	}
+	if countUp {
+		timeLeft = 0
+	}
 
-  	draw(timeLeft)
+	draw(timeLeft)
 
 loop:
 	for {
@@ -98,12 +99,12 @@ loop:
 		case <-ticker.C:
 			if countUp {
 				timeLeft += time.Duration(tick)
-		      	} else {
-		      		timeLeft -= time.Duration(tick)
-		      	}
+			} else {
+				timeLeft -= time.Duration(tick)
+			}
 			draw(timeLeft)
 		case <-timer.C:
-      			break loop
+			break loop
 		}
 	}
 
@@ -113,7 +114,15 @@ loop:
 	}
 }
 
+func notify(title, body, icon string) {
+	err := beeep.Notify(title, body, icon)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
+	defer notify("Countdown App", "Timer Finished", "assets/bell.svg")
 	if len(os.Args) < 2 || len(os.Args) > 3 {
 		stderr(usage)
 		os.Exit(2)
@@ -137,6 +146,6 @@ func main() {
 			queues <- termbox.PollEvent()
 		}
 	}()
-  	countUp := len(os.Args) == 3 && os.Args[2] == "-up"
+	countUp := len(os.Args) == 3 && os.Args[2] == "-up"
 	countdown(timeLeft, countUp)
 }
