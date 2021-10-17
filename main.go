@@ -121,6 +121,26 @@ func notify(title, body, icon string) {
 	}
 }
 
+func getKitchenTimeDuration(date string) (time.Duration, error) {
+
+	targetTime, err := time.Parse(time.Kitchen, date)
+	if err != nil {
+		return time.Duration(0), err
+	}
+
+	now := time.Now()
+	originTime := time.Date(0, time.January, 1, now.Hour(), now.Minute(), now.Second(), 0, time.UTC)
+
+	// the time of day has already passed, so target tomorrow
+	if targetTime.Before(originTime) {
+		targetTime = targetTime.AddDate(0, 0, 1)
+	}
+
+	duration := targetTime.Sub(originTime)
+
+	return duration, err
+}
+
 func main() {
 	defer notify("Countdown App", "Timer Finished", "assets/bell.svg")
 	if len(os.Args) < 2 || len(os.Args) > 3 {
@@ -128,12 +148,16 @@ func main() {
 		os.Exit(2)
 	}
 
-	duration, err := time.ParseDuration(os.Args[1])
+	timeLeft, err := getKitchenTimeDuration(os.Args[1])
+
 	if err != nil {
-		stderr("error: invalid duration: %v\n", os.Args[1])
-		os.Exit(2)
+
+		timeLeft, err = time.ParseDuration(os.Args[1])
+		if err != nil {
+			stderr("error: invalid duration or kitchentime: %v\n", os.Args[1])
+			os.Exit(2)
+		}
 	}
-	timeLeft := duration
 
 	err = termbox.Init()
 	if err != nil {

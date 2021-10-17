@@ -10,6 +10,14 @@ Specify duration in go format `1h2m3s`.
 countdown 25s
 ```
 
+Or specify target time in [Kitchen time format](https://pkg.go.dev/time#pkg-constants). This starts a countdown to the matching time within the next 24 hours.
+For instance, if the current time would be 11:30AM, 
+```bash
+countdown 11:32AM
+```
+
+would trigger a 2 minute countdown.
+
 Add command with `&&` to run after countdown.
 
 ```bash
