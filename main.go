@@ -22,7 +22,6 @@ var (
 	timer          *time.Timer
 	ticker         *time.Ticker
 	queues         chan termbox.Event
-	startDone      bool
 	startX, startY int
 )
 
@@ -33,10 +32,7 @@ func draw(d time.Duration) {
 	str := format(d)
 	text := toText(str)
 
-	if !startDone {
-		startDone = true
-		startX, startY = w/2-text.width()/2, h/2-text.height()/2
-	}
+	startX, startY = w/2-text.width()/2, h/2-text.height()/2
 
 	x, y := startX, startY
 	for _, s := range text {
