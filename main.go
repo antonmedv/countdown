@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/gen2brain/beeep"
 	"github.com/nsf/termbox-go"
 )
 
@@ -98,9 +97,9 @@ loop:
 			}
 		case <-ticker.C:
 			if countUp {
-				timeLeft += time.Duration(tick)
+				timeLeft += tick
 			} else {
-				timeLeft -= time.Duration(tick)
+				timeLeft -= tick
 			}
 			draw(timeLeft)
 		case <-timer.C:
@@ -111,13 +110,6 @@ loop:
 	termbox.Close()
 	if exitCode != 0 {
 		os.Exit(exitCode)
-	}
-}
-
-func notify(title, body, icon string) {
-	err := beeep.Notify(title, body, icon)
-	if err != nil {
-		panic(err)
 	}
 }
 
@@ -142,7 +134,6 @@ func getKitchenTimeDuration(date string) (time.Duration, error) {
 }
 
 func main() {
-	defer notify("Countdown App", "Timer Finished", "assets/bell.svg")
 	if len(os.Args) < 2 || len(os.Args) > 3 {
 		stderr(usage)
 		os.Exit(2)
@@ -154,7 +145,7 @@ func main() {
 
 		timeLeft, err = time.ParseDuration(os.Args[1])
 		if err != nil {
-			stderr("error: invalid duration or kitchentime: %v\n", os.Args[1])
+			stderr("error: invalid duration or kitchen time: %v\n", os.Args[1])
 			os.Exit(2)
 		}
 	}
