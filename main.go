@@ -9,10 +9,17 @@ import (
 )
 
 const (
-	usage = `usage:
-countdown 25s [-up]
-countdown 1m50s [-up]
-countdown 2h45m50s [-up]
+	usage = `
+ countdown
+
+ Usage:
+    countdown 25s
+    countdown 1m50s
+    countdown 3h40m50s
+
+ Options:
+    -up : count up from zero
+
 `
 	tick = time.Second
 )
