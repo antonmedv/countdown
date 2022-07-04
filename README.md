@@ -33,7 +33,7 @@ countdown 1m30s && say "Hello, world"
 ## Install
 
 ```bash
-go get github.com/antonmedv/countdown
+go install github.com/antonmedv/countdown
 ```
 
 ## License
