@@ -146,6 +146,11 @@ func main() {
 		os.Exit(2)
 	}
 
+	term := os.Getenv("TERM")
+	if (len(term) >= 4 && term[0:4] == "tmux") {
+		os.Setenv("TERM", "xterm-color")
+	}
+
 	timeLeft, err := getKitchenTimeDuration(os.Args[1])
 
 	if err != nil {
