@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"strings"
 
 	"github.com/nsf/termbox-go"
 )
@@ -146,7 +147,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	timeLeft, err := getKitchenTimeDuration(os.Args[1])
+	timeLeft, err := getKitchenTimeDuration(strings.ToUpper(os.Args[1]))
 
 	if err != nil {
 
