@@ -31,6 +31,8 @@ var (
 	queues         chan termbox.Event
 	startDone      bool
 	startX, startY int
+	inputStartTime time.Time
+	isPaused       bool
 )
 
 func main() {
@@ -80,6 +82,7 @@ func stop() {
 
 func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool) {
 	var exitCode int
+	isPaused = false
 
 	start(timeLeft)
 
@@ -96,16 +99,22 @@ loop:
 	for {
 		select {
 		case ev := <-queues:
-			if ev.Type == termbox.EventKey && (ev.Key == termbox.KeyEsc || ev.Key == termbox.KeyCtrlC) {
+			if ev.Key == termbox.KeyEsc || ev.Key == termbox.KeyCtrlC {
 				exitCode = 1
 				break loop
 			}
-			if ev.Ch == 'p' || ev.Ch == 'P' {
-				stop()
+
+			if pressTime := time.Now(); ev.Key == termbox.KeySpace && pressTime.Sub(inputStartTime) > 500*time.Millisecond {
+				if isPaused {
+					start(timeLeft)
+					isPaused = false
+				} else {
+					stop()
+					isPaused = true
+				}
+				inputStartTime = time.Now()
 			}
-			if ev.Ch == 'c' || ev.Ch == 'C' {
-				start(timeLeft)
-			}
+
 		case <-ticker.C:
 			if countUp {
 				timeLeft += tick
