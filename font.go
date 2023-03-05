@@ -90,3 +90,8 @@ var defaultFont = Font{
 		" ╚════╝ ",
 	},
 }
+
+var pausedText = Symbol{
+	"█▀▄ ▄▀▄ █ █ ▄▀▀ ██▀ █▀▄",
+	"█▀  █▀█ ▀▄█ ▄██ █▄▄ █▄▀",
+}

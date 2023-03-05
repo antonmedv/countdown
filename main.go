@@ -22,7 +22,8 @@ const (
 
  Flags
 `
-	tick = time.Second
+	tick         = time.Second
+	inputDelayMS = 500 * time.Millisecond
 )
 
 var (
@@ -104,14 +105,16 @@ loop:
 				break loop
 			}
 
-			if pressTime := time.Now(); ev.Key == termbox.KeySpace && pressTime.Sub(inputStartTime) > 500*time.Millisecond {
+			if pressTime := time.Now(); ev.Key == termbox.KeySpace && pressTime.Sub(inputStartTime) > inputDelayMS {
 				if isPaused {
 					start(timeLeft)
-					isPaused = false
+					draw(timeLeft)
 				} else {
 					stop()
-					isPaused = true
+					drawPause()
 				}
+
+				isPaused = !isPaused
 				inputStartTime = time.Now()
 			}
 
@@ -154,6 +157,15 @@ func draw(d time.Duration) {
 		x += s.width()
 	}
 
+	flush()
+}
+
+func drawPause() {
+	w, h := termbox.Size()
+	startX := w/2 - pausedText.width()/2
+	startY := h * 3 / 4
+
+	echo(pausedText, startX, startY)
 	flush()
 }
 
