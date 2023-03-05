@@ -22,7 +22,8 @@ const (
 
  Flags
 `
-	tick = time.Second
+	tick         = time.Second
+	inputDelayMS = 500 * time.Millisecond
 )
 
 var (
@@ -31,6 +32,8 @@ var (
 	queues         chan termbox.Event
 	startDone      bool
 	startX, startY int
+	inputStartTime time.Time
+	isPaused       bool
 )
 
 func main() {
@@ -80,6 +83,7 @@ func stop() {
 
 func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool) {
 	var exitCode int
+	isPaused = false
 
 	start(timeLeft)
 
@@ -96,16 +100,24 @@ loop:
 	for {
 		select {
 		case ev := <-queues:
-			if ev.Type == termbox.EventKey && (ev.Key == termbox.KeyEsc || ev.Key == termbox.KeyCtrlC) {
+			if ev.Key == termbox.KeyEsc || ev.Key == termbox.KeyCtrlC {
 				exitCode = 1
 				break loop
 			}
-			if ev.Ch == 'p' || ev.Ch == 'P' {
-				stop()
+
+			if pressTime := time.Now(); ev.Key == termbox.KeySpace && pressTime.Sub(inputStartTime) > inputDelayMS {
+				if isPaused {
+					start(timeLeft)
+					draw(timeLeft)
+				} else {
+					stop()
+					drawPause()
+				}
+
+				isPaused = !isPaused
+				inputStartTime = time.Now()
 			}
-			if ev.Ch == 'c' || ev.Ch == 'C' {
-				start(timeLeft)
-			}
+
 		case <-ticker.C:
 			if countUp {
 				timeLeft += tick
@@ -145,6 +157,15 @@ func draw(d time.Duration) {
 		x += s.width()
 	}
 
+	flush()
+}
+
+func drawPause() {
+	w, h := termbox.Size()
+	startX := w/2 - pausedText.width()/2
+	startY := h * 3 / 4
+
+	echo(pausedText, startX, startY)
 	flush()
 }
 
