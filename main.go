@@ -39,18 +39,33 @@ var (
 func main() {
 	countUp := flag.Bool("up", false, "count up from zero")
 	sayTheTime := flag.Bool("say", false, "announce the time left")
+	var unlimitedCountUp bool = false
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) != 1 {
-		stderr(usage)
-		flag.PrintDefaults()
-		os.Exit(2)
+		if *countUp == true {
+			unlimitedCountUp = true
+		} else {
+			stderr(usage)
+			flag.PrintDefaults()
+			os.Exit(2)
+		}
 	}
-	timeLeft, err := parseTime(args[0])
+	var timeLeft time.Duration
+	var err error
+	if unlimitedCountUp == true {
+		timeLeft, err = parseTime("1s")
+	}else {
+		timeLeft, err = parseTime(args[0])
+	}
 
 	if err != nil {
-		timeLeft, err = time.ParseDuration(args[0])
+		if unlimitedCountUp == true {
+			timeLeft, err = time.ParseDuration("1s")
+		}else {
+			timeLeft, err = time.ParseDuration(args[0])
+		}
 		if err != nil {
 			stderr("error: invalid duration or time: %v\n", args[0])
 			os.Exit(2)
@@ -68,7 +83,7 @@ func main() {
 			queues <- termbox.PollEvent()
 		}
 	}()
-	countdown(timeLeft, *countUp, *sayTheTime)
+	countdown(timeLeft, *countUp, *sayTheTime, unlimitedCountUp)
 }
 
 func start(d time.Duration) {
@@ -81,7 +96,7 @@ func stop() {
 	ticker.Stop()
 }
 
-func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool) {
+func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool, unlimitedCountUp bool) {
 	var exitCode int
 	isPaused = false
 
@@ -129,7 +144,9 @@ loop:
 				go say(timeLeft)
 			}
 		case <-timer.C:
-			break loop
+			if(unlimitedCountUp != true){
+				break loop
+			}
 		}
 	}
 
