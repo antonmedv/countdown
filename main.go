@@ -13,7 +13,7 @@ import (
 
 const (
 	usage = `
- countdown [-up] [-say] <duration>
+ countdown [-up] [-say] [-title <title>] <duration>
 
  Usage
   countdown 25s
@@ -39,6 +39,7 @@ var (
 func main() {
 	countUp := flag.Bool("up", false, "count up from zero")
 	sayTheTime := flag.Bool("say", false, "announce the time left")
+	title := flag.String("title", "", "set a title for the countdown")
 	flag.Parse()
 
 	args := flag.Args()
@@ -68,7 +69,7 @@ func main() {
 			queues <- termbox.PollEvent()
 		}
 	}()
-	countdown(timeLeft, *countUp, *sayTheTime)
+	countdown(timeLeft, *countUp, *sayTheTime, *title)
 }
 
 func start(d time.Duration) {
@@ -81,7 +82,7 @@ func stop() {
 	ticker.Stop()
 }
 
-func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool) {
+func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool, title string) {
 	var exitCode int
 	isPaused = false
 
@@ -92,6 +93,8 @@ func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool) {
 	}
 
 	draw(timeLeft)
+	drawTitle(title)
+
 	if sayTheTime {
 		go say(timeLeft)
 	}
@@ -109,6 +112,7 @@ loop:
 				if isPaused {
 					start(timeLeft)
 					draw(timeLeft)
+					drawTitle(title)
 				} else {
 					stop()
 					drawPause()
@@ -125,6 +129,7 @@ loop:
 				timeLeft -= tick
 			}
 			draw(timeLeft)
+			drawTitle(title)
 			if sayTheTime {
 				go say(timeLeft)
 			}
@@ -167,6 +172,22 @@ func drawPause() {
 
 	echo(pausedText, startX, startY)
 	flush()
+}
+
+func drawTitle(title string) {
+	w, h := termbox.Size()
+	text := toTittleText(title)
+	startX := w/2 - text.width()/2
+	startY := h * 1 / 8
+
+	x := startX
+	for _, s := range text {
+		echo(s, x, startY)
+		x += s.width()
+	}
+
+	flush()
+
 }
 
 func format(d time.Duration) string {
