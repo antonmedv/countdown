@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/nsf/termbox-go"
 	"os"
 	"unicode/utf8"
+
+	"github.com/nsf/termbox-go"
 )
 
 type Symbol []string
@@ -36,6 +37,16 @@ func toText(str string) Text {
 	for _, r := range str {
 		if s, ok := defaultFont[r]; ok {
 			symbols = append(symbols, s)
+		}
+	}
+	return symbols
+}
+
+func toTittleText(str string) Text {
+	symbols := make(Text, 0)
+	for _, r := range str {
+		if r != '\n' && r != '\t' && r != '\r' && r != '\v' && r != '\f' {
+			symbols = append(symbols, Symbol{string(r)})
 		}
 	}
 	return symbols
