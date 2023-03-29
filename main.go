@@ -81,17 +81,21 @@ func stop() {
 	ticker.Stop()
 }
 
-func countdown(timeLeft time.Duration, countUp bool, sayTheTime bool) {
+func durationToDraw(timeLeft, totalDuration time.Duration, countUp bool) time.Duration {
+	if countUp {
+		return totalDuration - timeLeft
+	}
+	return timeLeft
+}
+
+func countdown(totalDuration time.Duration, countUp bool, sayTheTime bool) {
+	timeLeft := totalDuration
 	var exitCode int
 	isPaused = false
 
 	start(timeLeft)
 
-	if countUp {
-		timeLeft = 0
-	}
-
-	draw(timeLeft)
+	draw(durationToDraw(timeLeft, totalDuration, countUp))
 	if sayTheTime {
 		go say(timeLeft)
 	}
@@ -108,7 +112,7 @@ loop:
 			if pressTime := time.Now(); ev.Key == termbox.KeySpace && pressTime.Sub(inputStartTime) > inputDelayMS {
 				if isPaused {
 					start(timeLeft)
-					draw(timeLeft)
+					draw(durationToDraw(timeLeft, totalDuration, countUp))
 				} else {
 					stop()
 					drawPause()
@@ -119,12 +123,8 @@ loop:
 			}
 
 		case <-ticker.C:
-			if countUp {
-				timeLeft += tick
-			} else {
-				timeLeft -= tick
-			}
-			draw(timeLeft)
+			timeLeft -= tick
+			draw(durationToDraw(timeLeft, totalDuration, countUp))
 			if sayTheTime {
 				go say(timeLeft)
 			}
