@@ -13,11 +13,11 @@ import (
 
 const (
 	usage = `
- countdown [-up] [-say] <duration>
+ countdown [-up] [-say] [-title text] <duration>
 
  Usage
   countdown 25s
-  countdown 14:15
+  countdown -title "Coffee Break" 14:15
   countdown 02:15PM
 
  Flags
@@ -38,6 +38,7 @@ var (
 func main() {
 	countUp := flag.Bool("up", false, "count up from zero")
 	sayTheTime := flag.Bool("say", false, "announce the time left")
+	title := flag.String("title", "", "display title below the countdown")
 	flag.Parse()
 
 	args := flag.Args()
@@ -67,7 +68,7 @@ func main() {
 			queues <- termbox.PollEvent()
 		}
 	}()
-	countdown(timeLeft, *countUp, *sayTheTime)
+	countdown(timeLeft, *countUp, *sayTheTime, *title)
 }
 
 func start(d time.Duration) {
@@ -87,14 +88,14 @@ func durationToDraw(timeLeft, totalDuration time.Duration, countUp bool) time.Du
 	return timeLeft
 }
 
-func countdown(totalDuration time.Duration, countUp bool, sayTheTime bool) {
+func countdown(totalDuration time.Duration, countUp bool, sayTheTime bool, title string) {
 	timeLeft := totalDuration
 	var exitCode int
 	isPaused = false
 	w, h = termbox.Size()
 	start(timeLeft)
 
-	draw(durationToDraw(timeLeft, totalDuration, countUp), w, h)
+	draw(durationToDraw(timeLeft, totalDuration, countUp), w, h, title)
 	if sayTheTime {
 		go say(timeLeft)
 	}
@@ -111,7 +112,7 @@ loop:
 			if pressTime := time.Now(); ev.Key == termbox.KeySpace && pressTime.Sub(inputStartTime) > inputDelayMS {
 				if isPaused {
 					start(timeLeft)
-					draw(durationToDraw(timeLeft, totalDuration, countUp), w, h)
+					draw(durationToDraw(timeLeft, totalDuration, countUp), w, h, title)
 				} else {
 					stop()
 					drawPause(w, h)
@@ -123,7 +124,7 @@ loop:
 
 			if ev.Type == termbox.EventResize {
 				w, h = termbox.Size()
-				draw(durationToDraw(timeLeft, totalDuration, countUp), w, h)
+				draw(durationToDraw(timeLeft, totalDuration, countUp), w, h, title)
 
 				if isPaused {
 					drawPause(w, h)
@@ -131,7 +132,7 @@ loop:
 			}
 		case <-ticker.C:
 			timeLeft -= tick
-			draw(durationToDraw(timeLeft, totalDuration, countUp), w, h)
+			draw(durationToDraw(timeLeft, totalDuration, countUp), w, h, title)
 			if sayTheTime {
 				go say(timeLeft)
 			}
@@ -146,18 +147,27 @@ loop:
 	}
 }
 
-func draw(d time.Duration, w int, h int) {
+func draw(d time.Duration, w int, h int, title string) {
 	clear()
 
 	str := format(d)
-	text := toText(str)
+	digits := toText(str)
 
-	startX, startY := w/2-text.width()/2, h/2-text.height()/2
+	startX, startY := w/2-digits.width()/2, h/2-digits.height()/2
 
 	x, y := startX, startY
-	for _, s := range text {
+	for _, s := range digits {
 		echo(s, x, y)
 		x += s.width()
+	}
+
+	// Draw title if provided
+	if title != "" {
+		titleY := startY + digits.height() + 2 // 2 lines below the numbers
+		titleX := w/2 - len(title)/2           // Center the title
+		for i, c := range title {
+			termbox.SetCell(titleX+i, titleY, c, termbox.ColorWhite, termbox.ColorDefault)
+		}
 	}
 
 	flush()
