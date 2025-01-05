@@ -45,6 +45,12 @@ Announce (via macOS `say` command) last 10 seconds.
 countdown -say 10s
 ```
 
+Display a title below the countdown timer.
+
+```sh
+countdown -title "Hello, world" 30s
+```
+
 ## Key binding
 
 - `Space`: Pause/Resume the countdown.
