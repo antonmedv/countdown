@@ -1,0 +1,151 @@
+# You may want to know...
+#
+# Conditions:
+# - Pushing anything triggers building.
+# - Pushing anything to the "master" branch produces a snapshot.
+#
+# Q: This workflow will not be triggered by releases. What if I want to release a non-snapshot version?
+# A: This workflow will be triggered by tags, so just create a release based on an existing tag on
+#    GitHub with your customized release note, then copy the artifacts from the recent snapshot.
+#
+
+name: Build, and may release a new snapshot
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build_artifacts:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v3.5.2
+
+      - name: Ready to Go
+        uses: actions/setup-go@v4.0.0
+        with:
+          go-version-file: "./go.mod"
+
+      - name: Build
+        id: builder
+        run: |
+          set -euo pipefail
+
+          ARTIFACTS_DIR="$(mktemp -d)"
+
+          echo "artifacts_dir_path=${ARTIFACTS_DIR}" >> $GITHUB_OUTPUT
+
+          function build() {
+            echo "Building ${GOOS}-${GOARCH}"
+
+            output_filename="${ARTIFACTS_DIR}/countdown_${GOOS}_${GOARCH}"
+            if [[ "${GOOS}" == 'windows' ]]; then
+              output_filename="${output_filename}.exe"
+            fi
+
+            go build -o "${output_filename}"
+          }
+
+          function f() {
+            echo 'vvvvvv'
+
+            GOOS="${GOOS}" GOARCH="${GOARCH}" build
+
+            echo '^^^^^^'
+          }
+
+          GOOS=android GOARCH=arm64 f
+          GOOS=darwin  GOARCH=amd64 f
+          GOOS=darwin  GOARCH=arm64 f
+          GOOS=linux   GOARCH=amd64 f
+          GOOS=linux   GOARCH=arm64 f
+          GOOS=windows GOARCH=amd64 f
+          GOOS=windows GOARCH=arm64 f
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          if-no-files-found: error
+          name: countdown-build-all_in_one
+          path: "${{ steps.builder.outputs.artifacts_dir_path }}/*"
+
+  make_release:
+    # https://docs.github.com/en/actions/learn-github-actions/contexts
+    # https://docs.github.com/actions/learn-github-actions/expressions
+    if: ${{ github.ref == 'refs/heads/master' }}
+
+    needs: build_artifacts
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    # https://github.blog/changelog/2021-04-19-github-actions-limit-workflow-run-or-job-concurrency/
+    concurrency:
+      group: std::lock_guard
+      cancel-in-progress: true
+
+    timeout-minutes: 10
+
+    env:
+      tag_name: snapshot
+
+    steps:
+      - name: Download artifacts
+        id: artifacts_downloader
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: countdown-build-all_in_one
+          path: ../artifacts # prevent files from being overwritten by "checkout".
+
+      # for deleting existing tag later
+      - uses: actions/checkout@v3.5.2
+
+      - name: Delete existing tag '${{ env.tag_name }}' if it exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          set -x
+          if gh release view '${{ env.tag_name }}'; then
+            gh release delete '${{ env.tag_name }}' --cleanup-tag --yes
+            # GitHub seems to need some time to clean things up.
+            # If there is no sleep, a draft release may be generated.
+            sleep 60
+          fi
+
+      # https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+      # https://stackoverflow.com/questions/74137120/how-to-fix-or-avoid-error-unable-to-process-file-command-output-successfully
+      - name: Hash files
+        id: hash_calculator
+        run: |
+          pushd '${{ steps.artifacts_downloader.outputs.download-path }}'
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "hash<<$EOF" >> $GITHUB_OUTPUT
+          md5sum * | tee --append $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          popd
+
+      - name: Tag and release '${{ env.tag_name }}'
+        uses: svenstaro/upload-release-action@2.5.0
+        with:
+          tag: "${{ env.tag_name }}"
+          file: "${{ steps.artifacts_downloader.outputs.download-path }}/*"
+          file_glob: true
+          prerelease: true
+          release_name: "Release ${{ env.tag_name }}"
+          body: | # markdown
+            The ${{ env.tag_name }} release produced by GitHub Actions.
+
+            MD5 hash:
+
+            ```
+            ${{ steps.hash_calculator.outputs.hash }}
+            ```
